@@ -15,20 +15,26 @@
   header p{margin:6px 0 0; opacity:0.85; font-size:0.9rem;}
   main{max-width:640px; margin:0 auto; padding:20px 16px;}
   input[type=text]{width:100%; padding:10px 12px; border:2px solid var(--ink); font-size:0.95rem; margin-bottom:14px;}
+  button{font-family:'Inter',sans-serif; font-weight:700; border:3px solid var(--ink); background:var(--yellow); color:var(--ink); padding:10px 15px; cursor:pointer; box-shadow:3px 3px 0 var(--ink); font-size:0.9rem; margin-bottom:14px;}
+  button:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink);}
   .series-group{margin-bottom:22px;}
   .series-title{font-family:'Bangers',cursive; font-size:1.3rem; letter-spacing:0.5px; margin:0 0 8px; color:var(--blue); border-bottom:2px solid var(--ink); padding-bottom:4px;}
   .book-list{list-style:none; padding:0; margin:0;}
-  .book{display:flex; gap:12px; border:2px solid var(--ink); padding:10px; margin-bottom:10px; background:#fffdf8;}
+  .book{position:relative; display:flex; gap:12px; border:2px solid var(--ink); padding:10px; padding-bottom:34px; margin-bottom:10px; background:#fffdf8;}
   .book img{width:52px; height:74px; object-fit:cover; border:2px solid var(--ink); flex-shrink:0; background:#eee;}
   .book .info{flex:1; min-width:0;}
   .book .info h3{margin:0 0 4px; font-size:0.95rem; line-height:1.2;}
   .book .info p{margin:0; font-size:0.78rem; opacity:0.7;}
   .book .note{font-size:0.78rem; margin-top:5px; font-style:italic; opacity:0.8;}
-  .badge{display:inline-block; font-size:0.68rem; padding:2px 7px; margin-top:5px; margin-right:4px;}
-  .badge.liked{background:var(--green); color:#fff;}
-  .badge.disliked{background:var(--red); color:#fff;}
-  .badge.isbn{background:var(--blue); color:#fff;}
-  .badge.missing{background:var(--grey); color:#fff;}
+  .isbn-tag{display:inline-block; background:var(--blue); color:#fff; font-size:0.68rem; padding:2px 6px; margin-top:5px;}
+  .possession-tag{
+    position:absolute; bottom:8px; right:8px;
+    font-size:0.72rem; font-weight:700; padding:3px 8px;
+    display:flex; align-items:center; gap:4px;
+  }
+  .possession-tag.owned{ background:var(--green); color:#fff; }
+  .possession-tag.nope{ background:var(--red); color:#fff; }
+  .possession-tag.wishlist{ background:var(--yellow); color:var(--ink); }
   #count{background:var(--red); color:#fff; font-size:0.75rem; padding:2px 8px; margin-left:8px;}
   #empty{text-align:center; padding:30px 10px; opacity:0.6; font-size:0.9rem; display:none;}
   .loading{text-align:center; padding:30px; opacity:0.6;}
@@ -37,22 +43,23 @@
 <body>
 <header>
   <h1>Ma BDthèque</h1>
-  <p>Collection consultable — <span id="count">0</span> album(s)</p>
+  <p>Collection consultable — <span id="count">0</span> album(s) possédé(s)</p>
 </header>
 <main>
   <input type="text" id="search" placeholder="Rechercher un titre, un auteur ou une série...">
+  <div class="row">
+    <button id="btn-wishlist-toggle">⭐ Voir la wishlist</button>
+  </div>
   <div id="loading" class="loading">Chargement...</div>
   <div id="groups"></div>
-  <div id="empty">Aucune BD dans la collection pour l'instant.</div>
+  <div id="empty">Aucune BD à afficher.</div>
 </main>
 
 <script>
-// ==========================================================
-// COLLEZ ICI L'URL DE VOTRE DÉPLOIEMENT APPS SCRIPT (se termine par /exec)
-// ==========================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbxUWVtEWRGd7ti_JLFW_rFplt7X2kB3unbIA7IOlfcq3s-N10DFhJvvRZ4ngnPmru4R/exec';
 
 let allBooks = [];
+let showWishlistOnly = false;
 
 function escapeHtml(str){
   const div = document.createElement('div');
@@ -72,40 +79,52 @@ function groupBySeries(books){
     if(b === 'Sans série') return -1;
     return a.localeCompare(b, 'fr');
   });
-  keys.forEach(k => groups[k].sort((a,b)=> (a.title||'').localeCompare(b.title||'', 'fr')));
+  keys.forEach(k => groups[k].sort((a,b)=>{
+    const ta = parseInt(a.tome,10), tb = parseInt(b.tome,10);
+    const va = isNaN(ta) ? Infinity : ta, vb = isNaN(tb) ? Infinity : tb;
+    if(va !== vb) return va - vb;
+    return (a.title||'').localeCompare(b.title||'', 'fr');
+  }));
   return { groups, keys };
 }
 
+function possessionTag(possession){
+  if(possession === 'Wishlist') return `<span class="possession-tag wishlist">⭐ Je le veux !</span>`;
+  if(possession === "Je n'en veux pas") return `<span class="possession-tag nope">❌ Non merci</span>`;
+  return `<span class="possession-tag owned">✅ Déjà possédé</span>`;
+}
+
 function bookCard(b){
-  let badges = `<span class="badge isbn">${escapeHtml(b.isbn)}</span>`;
-  if(b.status === 'Aimé') badges += `<span class="badge liked">👍 Aimé</span>`;
-  if(b.status === 'Pas aimé') badges += `<span class="badge disliked">👎 Pas aimé</span>`;
-  if(b.possession === 'Non possédé') badges += `<span class="badge missing">Non possédé</span>`;
   return `
     <li class="book">
       <img src="${b.cover||''}" onerror="this.style.visibility='hidden'">
       <div class="info">
         <h3>${escapeHtml(b.title || 'Titre inconnu')}</h3>
         <p>${escapeHtml(b.authors || 'Auteur inconnu')}</p>
-        ${badges}
+        <span class="isbn-tag">${escapeHtml(b.isbn)}</span>
         ${b.note ? `<div class="note">"${escapeHtml(b.note)}"</div>` : ''}
       </div>
+      ${possessionTag(b.possession)}
     </li>`;
 }
 
 function render(){
   const q = document.getElementById('search').value.trim().toLowerCase();
   const container = document.getElementById('groups');
-  document.getElementById('count').textContent = allBooks.length;
+  document.getElementById('count').textContent = allBooks.filter(b => b.possession === "Je l'ai").length;
 
-  const filtered = allBooks.filter(b=>{
+  let filtered = allBooks.filter(b=>{
     if(!q) return true;
     return (b.title||'').toLowerCase().includes(q)
       || (b.authors||'').toLowerCase().includes(q)
       || (b.series||'').toLowerCase().includes(q);
   });
 
-  document.getElementById('empty').style.display = allBooks.length === 0 ? 'block' : 'none';
+  if(showWishlistOnly){
+    filtered = filtered.filter(b => b.possession === 'Wishlist');
+  }
+
+  document.getElementById('empty').style.display = filtered.length === 0 ? 'block' : 'none';
   container.innerHTML = '';
   if(filtered.length === 0) return;
 
@@ -119,6 +138,12 @@ function render(){
 }
 
 document.getElementById('search').addEventListener('input', render);
+
+document.getElementById('btn-wishlist-toggle').addEventListener('click', ()=>{
+  showWishlistOnly = !showWishlistOnly;
+  document.getElementById('btn-wishlist-toggle').textContent = showWishlistOnly ? '📚 Voir toute la collection' : '⭐ Voir la wishlist';
+  render();
+});
 
 async function loadBooks(){
   try{
