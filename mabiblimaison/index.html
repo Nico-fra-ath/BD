@@ -20,18 +20,12 @@
   button:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink);}
   button.secondary{background:#fff;}
   button.danger{background:var(--red); color:#fff;}
+  button.confirm{background:var(--green); color:#fff;}
   button.small{padding:5px 9px; font-size:0.75rem; box-shadow:2px 2px 0 var(--ink);}
   .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
   input[type=text]{flex:1; min-width:160px; padding:10px 12px; border:2px solid var(--ink); font-size:0.95rem;}
   select{padding:8px; border:2px solid var(--ink); font-family:'Inter',sans-serif; font-size:0.85rem;}
   #reader{width:100%; border:2px dashed var(--ink); margin-top:12px;}
-  #scan-flash{
-    position:absolute; inset:0; margin-top:12px;
-    display:flex; align-items:center; justify-content:center;
-    font-size:5rem; color:var(--green); background:rgba(255,255,255,0.85);
-    opacity:0; pointer-events:none; transition:opacity .15s ease;
-  }
-  #scan-flash.show{ opacity:1; }
   #scan-status{font-size:0.85rem; margin-top:8px; opacity:0.75;}
   .series-group{margin-bottom:20px;}
   .series-title{font-family:'Bangers',cursive; font-size:1.2rem; margin:0 0 8px; color:var(--blue); border-bottom:2px solid var(--ink); padding-bottom:4px;}
@@ -41,8 +35,6 @@
   .book-top{display:flex; gap:12px;}
   .book img{width:52px; height:74px; object-fit:cover; border:2px solid var(--ink); flex-shrink:0; background:#eee;}
   .book .info{flex:1; min-width:0;}
-  .book .info h3{margin:0 0 4px; font-size:0.95rem; line-height:1.2;}
-  .book .info p{margin:0; font-size:0.78rem; opacity:0.7;}
   .title-input{
     display:block; width:100%; font-weight:700; font-size:0.95rem; line-height:1.2;
     border:none; border-bottom:1px dashed transparent; background:transparent;
@@ -57,7 +49,7 @@
   .book .isbn-tag{display:inline-block; background:var(--blue); color:#fff; font-size:0.68rem; padding:2px 6px; margin-top:5px;}
   .book-controls{display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;}
   .field-label{font-size:0.7rem; opacity:0.6; display:block; margin-top:8px; margin-bottom:2px;}
-  .note-input, .series-input{width:100%; padding:6px 8px; border:2px solid var(--ink); font-size:0.82rem;}
+  .note-input, .series-input, .tome-input, .cover-input{width:100%; padding:6px 8px; border:2px solid var(--ink); font-size:0.82rem;}
   #count{background:var(--red); color:#fff; font-size:0.75rem; padding:2px 8px; margin-left:8px;}
   #dup-message{background:var(--yellow); border:2px solid var(--ink); padding:8px 12px; font-size:0.85rem; margin-top:10px; display:none;}
   .hidden{display:none !important;}
@@ -70,6 +62,14 @@
     box-shadow:3px 3px 0 var(--ink);
   }
   #btn-scroll-top.show{ opacity:1; pointer-events:auto; }
+  #reader-wrap{position:relative;}
+  #scan-flash{
+    position:absolute; inset:0; margin-top:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:5rem; color:var(--green); background:rgba(255,255,255,0.85);
+    opacity:0; pointer-events:none; transition:opacity .15s ease;
+  }
+  #scan-flash.show{ opacity:1; }
 </style>
 </head>
 <body>
@@ -86,7 +86,7 @@
       <button id="btn-stop-scan" class="secondary hidden">Arrêter la caméra</button>
     </div>
     <div id="scan-area" class="hidden">
-      <div id="reader-wrap" style="position:relative;">
+      <div id="reader-wrap">
         <div id="reader"></div>
         <div id="scan-flash">✓</div>
       </div>
@@ -113,17 +113,16 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script>
-// ==========================================================
-// COLLEZ ICI L'URL DE VOTRE DÉPLOIEMENT APPS SCRIPT (se termine par /exec)
-// Doit être EXACTEMENT LA MÊME URL que dans index.html
-// ==========================================================
+window.addEventListener('error', function(e){
+  const el = document.getElementById('scan-status');
+  const src = e.filename ? e.filename.split('/').pop() : 'inconnu';
+  if(el) el.textContent = 'Erreur JS : ' + e.message + ' — fichier: ' + src + ' (ligne ' + e.lineno + ', col ' + e.colno + ')';
+  console.error('Erreur capturée:', e.message, e.filename, e.lineno, e.colno);
+});
+</script>
+<script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbxUWVtEWRGd7ti_JLFW_rFplt7X2kB3unbIA7IOlfcq3s-N10DFhJvvRZ4ngnPmru4R/exec';
-
-// Doit correspondre à EDIT_SLUG dans Code.gs
 const EDIT_KEY = 'mabiblimaison';
-
-// Optionnel mais recommandé : votre propre clé Google Books (gratuite, quota personnel).
-// Voir les instructions fournies pour l'obtenir. Laissez vide pour utiliser le quota partagé (peut être à sec).
 const GOOGLE_BOOKS_API_KEY = 'AIzaSyCrKu8cBy6s-bvi6TvoOLTXhtRZS7lZm2Y';
 
 let allBooks = [];
@@ -170,7 +169,12 @@ function groupBySeries(books){
     if(b === 'Sans série') return -1;
     return a.localeCompare(b, 'fr');
   });
-  keys.forEach(k => groups[k].sort((a,b)=> (a.title||'').localeCompare(b.title||'', 'fr')));
+  keys.forEach(k => groups[k].sort((a,b)=>{
+    const ta = parseInt(a.tome,10), tb = parseInt(b.tome,10);
+    const va = isNaN(ta) ? Infinity : ta, vb = isNaN(tb) ? Infinity : tb;
+    if(va !== vb) return va - vb;
+    return (a.title||'').localeCompare(b.title||'', 'fr');
+  }));
   return { groups, keys };
 }
 
@@ -186,19 +190,18 @@ function bookCard(b){
         </div>
       </div>
       <div class="book-controls">
-        <select data-isbn="${b.isbn}" class="status-select">
-          <option value="" ${!b.status ? 'selected' : ''}>— Avis —</option>
-          <option value="Aimé" ${b.status==='Aimé' ? 'selected' : ''}>👍 Aimé</option>
-          <option value="Pas aimé" ${b.status==='Pas aimé' ? 'selected' : ''}>👎 Pas aimé</option>
-        </select>
         <select data-isbn="${b.isbn}" class="possession-select">
-          <option value="Possédé" ${b.possession!=='Non possédé' ? 'selected' : ''}>Possédé</option>
-          <option value="Non possédé" ${b.possession==='Non possédé' ? 'selected' : ''}>Non possédé</option>
+          <option value="Je l'ai" ${b.possession==="Je l'ai" ? 'selected' : ''}>Je l'ai</option>
+          <option value="Je n'en veux pas" ${b.possession==="Je n'en veux pas" ? 'selected' : ''}>Je n'en veux pas</option>
+          <option value="Wishlist" ${b.possession==='Wishlist' ? 'selected' : ''}>Wishlist</option>
         </select>
         <button class="small danger" data-isbn="${b.isbn}" data-action="delete">Supprimer</button>
+        <button class="small confirm hidden" data-isbn="${b.isbn}" data-action="save">Valider</button>
       </div>
       <span class="field-label">Série</span>
       <input type="text" class="series-input" data-isbn="${b.isbn}" placeholder="Nom de la série (optionnel)" value="${escapeHtml(b.series)}">
+      <span class="field-label">Tome</span>
+      <input type="text" class="tome-input" data-isbn="${b.isbn}" placeholder="Numéro du tome (optionnel)" value="${escapeHtml(b.tome)}">
       <span class="field-label">Couverture (lien d'image, optionnel)</span>
       <input type="text" class="cover-input" data-isbn="${b.isbn}" placeholder="https://..." value="${escapeHtml(b.cover)}">
       <span class="field-label">Note personnelle</span>
@@ -209,7 +212,7 @@ function bookCard(b){
 function render(){
   const q = document.getElementById('search').value.trim().toLowerCase();
   const container = document.getElementById('groups');
-  document.getElementById('count').textContent = allBooks.length;
+  document.getElementById('count').textContent = allBooks.filter(b => b.possession === "Je l'ai").length;
 
   const filtered = allBooks.filter(b=>{
     if(!q) return true;
@@ -230,45 +233,58 @@ function render(){
 
 document.getElementById('search').addEventListener('input', render);
 
+function markDirty(el){
+  const card = el.closest('.book');
+  if(!card) return;
+  const btn = card.querySelector('button[data-action="save"]');
+  if(btn) btn.classList.remove('hidden');
+}
+
+document.getElementById('groups').addEventListener('input', (e)=>{
+  if(e.target.matches('.title-input,.authors-input,.series-input,.tome-input,.cover-input,.note-input')){
+    markDirty(e.target);
+  }
+});
+document.getElementById('groups').addEventListener('change', (e)=>{
+  if(e.target.matches('.possession-select')){
+    markDirty(e.target);
+  }
+});
+
 document.getElementById('groups').addEventListener('click', async (e)=>{
-  const btn = e.target.closest('button[data-action="delete"]');
-  if(!btn) return;
-  if(!confirm('Supprimer cette BD de la collection ?')) return;
-  await callApi('delete', { isbn: btn.dataset.isbn });
-  await refresh();
-});
+  const delBtn = e.target.closest('button[data-action="delete"]');
+  if(delBtn){
+    if(!confirm('Supprimer cette BD de la collection ?')) return;
+    await callApi('delete', { isbn: delBtn.dataset.isbn });
+    await refresh();
+    return;
+  }
 
-document.getElementById('groups').addEventListener('change', async (e)=>{
-  if(e.target.classList.contains('status-select')){
-    await callApi('update', { isbn: e.target.dataset.isbn, updates: { status: e.target.value } });
-    await refresh();
-  }
-  if(e.target.classList.contains('possession-select')){
-    await callApi('update', { isbn: e.target.dataset.isbn, updates: { possession: e.target.value } });
-    await refresh();
+  const saveBtn = e.target.closest('button[data-action="save"]');
+  if(saveBtn){
+    const card = saveBtn.closest('.book');
+    const isbn = saveBtn.dataset.isbn;
+    const updates = {
+      title: card.querySelector('.title-input').value,
+      authors: card.querySelector('.authors-input').value,
+      series: card.querySelector('.series-input').value,
+      tome: card.querySelector('.tome-input').value,
+      cover: card.querySelector('.cover-input').value,
+      note: card.querySelector('.note-input').value,
+      possession: card.querySelector('.possession-select').value
+    };
+    saveBtn.textContent = '...';
+    saveBtn.disabled = true;
+    try{
+      await callApi('update', { isbn, updates });
+      await refresh();
+    }catch(err){
+      alert('Erreur : ' + err.message);
+      saveBtn.textContent = 'Valider';
+      saveBtn.disabled = false;
+    }
   }
 });
-
-document.getElementById('groups').addEventListener('blur', async (e)=>{
-  if(e.target.classList.contains('note-input')){
-    await callApi('update', { isbn: e.target.dataset.isbn, updates: { note: e.target.value } });
-  }
-  if(e.target.classList.contains('series-input')){
-    await callApi('update', { isbn: e.target.dataset.isbn, updates: { series: e.target.value } });
-    await refresh();
-  }
-  if(e.target.classList.contains('title-input')){
-    await callApi('update', { isbn: e.target.dataset.isbn, updates: { title: e.target.value } });
-    await refresh();
-  }
-  if(e.target.classList.contains('authors-input')){
-    await callApi('update', { isbn: e.target.dataset.isbn, updates: { authors: e.target.value } });
-  }
-  if(e.target.classList.contains('cover-input')){
-    await callApi('update', { isbn: e.target.dataset.isbn, updates: { cover: e.target.value } });
-    await refresh();
-  }
-}, true);
 
 async function fetchOpenLibrary_(isbn){
   try{
@@ -296,8 +312,6 @@ async function fetchGoogleBooks_(isbn){
   return { title:'', authors:'', cover:'' };
 }
 
-// Interroge les deux sources et combine le meilleur de chacune
-// (si l'une a le titre et l'autre l'auteur, on garde les deux plutôt que de s'arrêter à la première réponse)
 async function lookupIsbnOnce(isbn){
   const [ol, gb] = await Promise.all([ fetchOpenLibrary_(isbn), fetchGoogleBooks_(isbn) ]);
   return {
@@ -310,7 +324,6 @@ async function lookupIsbnOnce(isbn){
 
 function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
 
-// Réessaie une fois en cas d'échec réseau ponctuel des API gratuites
 async function lookupIsbn(isbn){
   let book = await lookupIsbnOnce(isbn);
   if(!book.title){
@@ -342,7 +355,6 @@ async function addIsbn(isbn){
   isbn = isbn.replace(/[^0-9Xx]/g,'');
   if(!isbn) return;
 
-  // Vérification locale immédiate : évite d'attendre le réseau si on l'a déjà
   if(allBooks.some(b => b.isbn === isbn)){
     document.getElementById('scan-status').textContent = '';
     showDupMessage('BD déjà répertoriée — vous pouvez l\'éditer ci-dessous.');
@@ -383,10 +395,8 @@ document.getElementById('manual-isbn').addEventListener('keydown', (e)=>{
 let scanLocked = false;
 let lastScannedCode = null;
 let lastScannedAt = 0;
-const SCAN_COOLDOWN_MS = 2500; // ignore le même code pendant 2,5s après un scan
+const SCAN_COOLDOWN_MS = 2500;
 
-// Vérifie que le code a bien la forme d'un vrai code-barres livre (EAN-13 + somme de contrôle valide).
-// Ça élimine la quasi-totalité des lectures corrompues par la caméra (flou, mouvement, reflets).
 function isValidBookBarcode(code){
   if(!/^\d{13}$/.test(code)) return false;
   const digits = code.split('').map(Number);
@@ -419,11 +429,11 @@ async function handleDecoded(decodedText){
 
   if(!isValidBookBarcode(decodedText)){
     flashScanRejected();
-    return; // on n'accepte pas ce code : pas de ligne créée
+    return;
   }
 
   scanLocked = true;
-  flashScanConfirmed(); // confirmation visuelle immédiate, avant même la recherche réseau
+  flashScanConfirmed();
 
   try{
     await addIsbn(decodedText);
@@ -464,7 +474,6 @@ document.getElementById('btn-stop-scan').addEventListener('click', async ()=>{
 
 refresh();
 
-// Bouton "remonter en haut" : apparaît dès qu'on a scrollé, pour revenir vite à la caméra
 const scrollTopBtn = document.getElementById('btn-scroll-top');
 window.addEventListener('scroll', ()=>{
   if(window.scrollY > 300){
