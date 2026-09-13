@@ -50,6 +50,15 @@
   #count{background:var(--red); color:#fff; font-size:0.75rem; padding:2px 8px; margin-left:8px;}
   #dup-message{background:var(--yellow); border:2px solid var(--ink); padding:8px 12px; font-size:0.85rem; margin-top:10px; display:none;}
   .hidden{display:none !important;}
+  #btn-scroll-top{
+    position:fixed; bottom:20px; right:20px; z-index:50;
+    width:52px; height:52px; border-radius:0; padding:0;
+    font-size:1.5rem; display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+    background:var(--red); color:#fff; border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);
+  }
+  #btn-scroll-top.show{ opacity:1; pointer-events:auto; }
 </style>
 </head>
 <body>
@@ -89,6 +98,8 @@
 
 </main>
 
+<button id="btn-scroll-top" title="Remonter en haut">⬆</button>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script>
 // ==========================================================
@@ -99,6 +110,10 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxUWVtEWRGd7ti_JLFW_rFp
 
 // Doit correspondre à EDIT_SLUG dans Code.gs
 const EDIT_KEY = 'mabiblimaison';
+
+// Optionnel mais recommandé : votre propre clé Google Books (gratuite, quota personnel).
+// Voir les instructions fournies pour l'obtenir. Laissez vide pour utiliser le quota partagé (peut être à sec).
+const GOOGLE_BOOKS_API_KEY = '';
 
 let allBooks = [];
 let html5QrCode = null;
@@ -242,7 +257,8 @@ async function lookupIsbnOnce(isbn){
     }
   }catch(e){}
   try{
-    const r2 = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+    const gbUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}` + (GOOGLE_BOOKS_API_KEY ? `&key=${GOOGLE_BOOKS_API_KEY}` : '');
+    const r2 = await fetch(gbUrl);
     const data2 = await r2.json();
     if(data2.items && data2.items.length){
       const v = data2.items[0].volumeInfo;
@@ -278,6 +294,8 @@ function scrollToAndHighlight(isbn){
     card.classList.add('highlight');
     setTimeout(()=> card.classList.remove('highlight'), 2500);
   }
+  const btn = document.getElementById('btn-scroll-top');
+  if(btn) btn.classList.add('show');
 }
 
 async function addIsbn(isbn){
@@ -404,6 +422,19 @@ document.getElementById('btn-stop-scan').addEventListener('click', async ()=>{
 });
 
 refresh();
+
+// Bouton "remonter en haut" : apparaît dès qu'on a scrollé, pour revenir vite à la caméra
+const scrollTopBtn = document.getElementById('btn-scroll-top');
+window.addEventListener('scroll', ()=>{
+  if(window.scrollY > 300){
+    scrollTopBtn.classList.add('show');
+  }else{
+    scrollTopBtn.classList.remove('show');
+  }
+});
+scrollTopBtn.addEventListener('click', ()=>{
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 </script>
 </body>
 </html>
