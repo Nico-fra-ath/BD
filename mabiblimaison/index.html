@@ -365,6 +365,7 @@ async function addIsbn(isbn){
     }else{
       document.getElementById('scan-status').textContent = book.title ? `Ajouté : ${book.title}` : `ISBN ${isbn} ajouté (infos non trouvées).`;
       render();
+      scrollToAndHighlight(isbn);
     }
   }catch(err){
     document.getElementById('scan-status').textContent = 'Erreur : ' + err.message;
