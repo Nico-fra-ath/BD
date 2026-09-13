@@ -194,6 +194,7 @@ function bookCard(b){
           <option value="Je l'ai" ${b.possession==="Je l'ai" ? 'selected' : ''}>Je l'ai</option>
           <option value="Je n'en veux pas" ${b.possession==="Je n'en veux pas" ? 'selected' : ''}>Je n'en veux pas</option>
           <option value="Wishlist" ${b.possession==='Wishlist' ? 'selected' : ''}>Wishlist</option>
+          <option value="Je l'ai, mais je ne veux pas la suite" ${b.possession==="Je l'ai, mais je ne veux pas la suite" ? 'selected' : ''}>Je l'ai, mais je ne veux pas la suite</option>
         </select>
         <button class="small danger" data-isbn="${b.isbn}" data-action="delete">Supprimer</button>
         <button class="small confirm hidden" data-isbn="${b.isbn}" data-action="save">Valider</button>
@@ -212,7 +213,7 @@ function bookCard(b){
 function render(){
   const q = document.getElementById('search').value.trim().toLowerCase();
   const container = document.getElementById('groups');
-  document.getElementById('count').textContent = allBooks.filter(b => b.possession === "Je l'ai").length;
+  document.getElementById('count').textContent = allBooks.filter(b => b.possession === "Je l'ai" || b.possession === "Je l'ai, mais je ne veux pas la suite").length;
 
   const filtered = allBooks.filter(b=>{
     if(!q) return true;
