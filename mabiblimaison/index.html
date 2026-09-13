@@ -25,6 +25,13 @@
   input[type=text]{flex:1; min-width:160px; padding:10px 12px; border:2px solid var(--ink); font-size:0.95rem;}
   select{padding:8px; border:2px solid var(--ink); font-family:'Inter',sans-serif; font-size:0.85rem;}
   #reader{width:100%; border:2px dashed var(--ink); margin-top:12px;}
+  #scan-flash{
+    position:absolute; inset:0; margin-top:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:5rem; color:var(--green); background:rgba(255,255,255,0.85);
+    opacity:0; pointer-events:none; transition:opacity .15s ease;
+  }
+  #scan-flash.show{ opacity:1; }
   #scan-status{font-size:0.85rem; margin-top:8px; opacity:0.75;}
   .series-group{margin-bottom:20px;}
   .series-title{font-family:'Bangers',cursive; font-size:1.2rem; margin:0 0 8px; color:var(--blue); border-bottom:2px solid var(--ink); padding-bottom:4px;}
@@ -59,7 +66,10 @@
       <button id="btn-stop-scan" class="secondary hidden">Arrêter la caméra</button>
     </div>
     <div id="scan-area" class="hidden">
-      <div id="reader"></div>
+      <div id="reader-wrap" style="position:relative;">
+        <div id="reader"></div>
+        <div id="scan-flash">✓</div>
+      </div>
     </div>
     <p id="scan-status"></p>
     <div id="dup-message"></div>
@@ -85,7 +95,7 @@
 // COLLEZ ICI L'URL DE VOTRE DÉPLOIEMENT APPS SCRIPT (se termine par /exec)
 // Doit être EXACTEMENT LA MÊME URL que dans index.html
 // ==========================================================
-const API_URL = 'https://script.google.com/macros/s/AKfycbxUWVtEWRGd7ti_JLFW_rFplt7X2kB3unbIA7IOlfcq3s-N10DFhJvvRZ4ngnPmru4R/exec';
+const API_URL = 'COLLEZ_ICI_VOTRE_URL_APPS_SCRIPT_QUI_SE_TERMINE_PAR_/exec';
 
 // Doit correspondre à EDIT_SLUG dans Code.gs
 const EDIT_KEY = 'mabiblimaison';
@@ -262,6 +272,14 @@ async function addIsbn(isbn){
   isbn = isbn.replace(/[^0-9Xx]/g,'');
   if(!isbn) return;
 
+  // Vérification locale immédiate : évite d'attendre le réseau si on l'a déjà
+  if(allBooks.some(b => b.isbn === isbn)){
+    document.getElementById('scan-status').textContent = '';
+    showDupMessage('BD déjà répertoriée — vous pouvez l\'éditer ci-dessous.');
+    scrollToAndHighlight(isbn);
+    return;
+  }
+
   document.getElementById('scan-status').textContent = `Recherche des informations pour ${isbn}...`;
   const book = await lookupIsbn(isbn);
 
@@ -291,6 +309,37 @@ document.getElementById('manual-isbn').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') document.getElementById('btn-manual-add').click();
 });
 
+let scanLocked = false;
+let lastScannedCode = null;
+let lastScannedAt = 0;
+const SCAN_COOLDOWN_MS = 2500; // ignore le même code pendant 2,5s après un scan
+
+function flashScanConfirmed(){
+  const el = document.getElementById('scan-flash');
+  if(!el) return;
+  el.classList.add('show');
+  setTimeout(()=> el.classList.remove('show'), 1200);
+}
+
+async function handleDecoded(decodedText){
+  const now = Date.now();
+  // Un traitement est déjà en cours : on ignore toute nouvelle détection
+  if(scanLocked) return;
+  // Même code que la dernière fois, trop rapproché : probablement le même passage devant la caméra
+  if(decodedText === lastScannedCode && (now - lastScannedAt) < SCAN_COOLDOWN_MS) return;
+
+  lastScannedCode = decodedText;
+  lastScannedAt = now;
+  scanLocked = true;
+  flashScanConfirmed(); // confirmation visuelle immédiate, avant même la recherche réseau
+
+  try{
+    await addIsbn(decodedText);
+  } finally {
+    scanLocked = false;
+  }
+}
+
 document.getElementById('btn-start-scan').addEventListener('click', async ()=>{
   document.getElementById('scan-area').classList.remove('hidden');
   document.getElementById('btn-start-scan').classList.add('hidden');
@@ -301,7 +350,7 @@ document.getElementById('btn-start-scan').addEventListener('click', async ()=>{
     await html5QrCode.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: { width: 250, height: 120 } },
-      (decodedText)=>{ addIsbn(decodedText); },
+      (decodedText)=>{ handleDecoded(decodedText); },
       ()=>{}
     );
     document.getElementById('scan-status').textContent = 'Visez le code-barre au dos de la BD.';
