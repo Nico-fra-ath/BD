@@ -90,7 +90,7 @@ function groupBySeries(books){
 
 function possessionTag(possession){
   if(possession === 'Wishlist') return `<span class="possession-tag wishlist">⭐ Je le veux !</span>`;
-  if(possession === "Je n'en veux pas") return `<span class="possession-tag nope">❌ Non merci</span>`;
+  if(possession === "Je n'en veux pas" || possession === "Je l'ai, mais je ne veux pas la suite") return `<span class="possession-tag nope">❌ Non merci</span>`;
   return `<span class="possession-tag owned">✅ Déjà possédé</span>`;
 }
 
@@ -111,7 +111,7 @@ function bookCard(b){
 function render(){
   const q = document.getElementById('search').value.trim().toLowerCase();
   const container = document.getElementById('groups');
-  document.getElementById('count').textContent = allBooks.filter(b => b.possession === "Je l'ai").length;
+  document.getElementById('count').textContent = allBooks.filter(b => b.possession === "Je l'ai" || b.possession === "Je l'ai, mais je ne veux pas la suite").length;
 
   let filtered = allBooks.filter(b=>{
     if(!q) return true;
