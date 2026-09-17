@@ -3,158 +3,77 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ma BDthèque — Édition</title>
+<title>Ma BDthèque</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --paper:#F7F3E9; --ink:#191A1E; --red:#D7263D; --blue:#1B4F72; --yellow:#F4B400; --green:#2A9D5C; }
+  :root{ --paper:#F7F3E9; --ink:#191A1E; --red:#D7263D; --blue:#1B4F72; --yellow:#F4B400; --green:#2A9D5C; --grey:#8a8a8a; }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif; padding-bottom:50px;}
   header{background:var(--ink); color:var(--paper); padding:26px 20px 22px; border-bottom:3px solid var(--ink);}
   header h1{font-family:'Bangers',cursive; font-size:2.4rem; margin:0; color:var(--yellow); text-shadow:3px 3px 0 var(--red); transform:rotate(-1.5deg); display:inline-block;}
   header p{margin:6px 0 0; opacity:0.85; font-size:0.9rem;}
   main{max-width:640px; margin:0 auto; padding:20px 16px;}
-  .panel{background:#fff; border:3px solid var(--ink); box-shadow:5px 5px 0 var(--ink); padding:18px; margin-bottom:22px;}
-  .panel h2{margin:0 0 12px; font-size:1.0rem; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--ink); padding-bottom:6px;}
-  button{font-family:'Inter',sans-serif; font-weight:700; border:3px solid var(--ink); background:var(--yellow); color:var(--ink); padding:10px 15px; cursor:pointer; box-shadow:3px 3px 0 var(--ink); font-size:0.9rem;}
+  input[type=text]{width:100%; padding:10px 12px; border:2px solid var(--ink); font-size:0.95rem; margin-bottom:14px;}
+  button{font-family:'Inter',sans-serif; font-weight:700; border:3px solid var(--ink); background:var(--yellow); color:var(--ink); padding:10px 15px; cursor:pointer; box-shadow:3px 3px 0 var(--ink); font-size:0.9rem; margin-bottom:14px;}
   button:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink);}
-  button.secondary{background:#fff;}
-  button.danger{background:var(--red); color:#fff;}
-  button.confirm{background:var(--green); color:#fff;}
-  button.small{padding:5px 9px; font-size:0.75rem; box-shadow:2px 2px 0 var(--ink);}
-  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
-  input[type=text]{flex:1; min-width:160px; padding:10px 12px; border:2px solid var(--ink); font-size:0.95rem;}
-  select{padding:8px; border:2px solid var(--ink); font-family:'Inter',sans-serif; font-size:0.85rem;}
-  #reader{width:100%; border:2px dashed var(--ink); margin-top:12px;}
-  #scan-status{font-size:0.85rem; margin-top:8px; opacity:0.75;}
-  .series-group{margin-bottom:20px;}
-  .series-title{font-family:'Bangers',cursive; font-size:1.2rem; margin:0 0 8px; color:var(--blue); border-bottom:2px solid var(--ink); padding-bottom:4px;}
+  .series-group{margin-bottom:22px;}
+  .series-title{font-family:'Bangers',cursive; font-size:1.3rem; letter-spacing:0.5px; margin:0 0 8px; color:var(--blue); border-bottom:2px solid var(--ink); padding-bottom:4px;}
   .book-list{list-style:none; padding:0; margin:0;}
-  .book{border:2px solid var(--ink); padding:10px; margin-bottom:10px; background:#fffdf8; transition:background .4s ease;}
-  .book.highlight{background:#FFF3C4;}
-  .book-top{display:flex; gap:12px;}
+  .book{position:relative; display:flex; gap:12px; border:2px solid var(--ink); padding:10px; padding-bottom:34px; margin-bottom:10px; background:#fffdf8;}
   .book img{width:52px; height:74px; object-fit:cover; border:2px solid var(--ink); flex-shrink:0; background:#eee;}
   .book .info{flex:1; min-width:0;}
-  .title-input{
-    display:block; width:100%; font-weight:700; font-size:0.95rem; line-height:1.2;
-    border:none; border-bottom:1px dashed transparent; background:transparent;
-    padding:1px 0; margin-bottom:3px; font-family:'Inter',sans-serif; color:var(--ink);
+  .book .info h3{margin:0 0 4px; font-size:0.95rem; line-height:1.2;}
+  .book .info p{margin:0; font-size:0.78rem; opacity:0.7;}
+  .series-line{
+    font-family:'Bangers',cursive; font-size:0.95rem; letter-spacing:0.4px;
+    color:var(--blue); line-height:1.1; margin-bottom:2px;
   }
-  .authors-input{
-    display:block; width:100%; font-size:0.78rem; opacity:0.75;
-    border:none; border-bottom:1px dashed transparent; background:transparent;
-    padding:1px 0; font-family:'Inter',sans-serif; color:var(--ink);
+  .tome-badge{
+    display:inline-block; background:var(--ink); color:var(--paper);
+    font-size:0.7rem; font-weight:700; padding:1px 6px; margin-right:6px;
+    vertical-align:middle;
   }
-  .title-input:focus, .authors-input:focus{ border-bottom-color:var(--ink); opacity:1; }
-  .book .isbn-tag{display:inline-block; background:var(--blue); color:#fff; font-size:0.68rem; padding:2px 6px; margin-top:5px;}
-  .book-controls{display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;}
-  .field-label{font-size:0.7rem; opacity:0.6; display:block; margin-top:8px; margin-bottom:2px;}
-  .note-input, .series-input, .tome-input, .cover-input{width:100%; padding:6px 8px; border:2px solid var(--ink); font-size:0.82rem;}
+  .book .note{font-size:0.78rem; margin-top:5px; font-style:italic; opacity:0.8;}
+  .isbn-tag{display:inline-block; background:var(--blue); color:#fff; font-size:0.68rem; padding:2px 6px; margin-top:5px;}
+  .possession-tag{
+    position:absolute; bottom:8px; right:8px;
+    font-size:0.72rem; font-weight:700; padding:3px 8px;
+    display:flex; align-items:center; gap:4px;
+  }
+  .possession-tag.owned{ background:var(--green); color:#fff; }
+  .possession-tag.nope{ background:var(--red); color:#fff; }
+  .possession-tag.wishlist{ background:var(--yellow); color:var(--ink); }
   #count{background:var(--red); color:#fff; font-size:0.75rem; padding:2px 8px; margin-left:8px;}
-  #dup-message{background:var(--yellow); border:2px solid var(--ink); padding:8px 12px; font-size:0.85rem; margin-top:10px; display:none;}
-  .hidden{display:none !important;}
-  #btn-scroll-top{
-    position:fixed; bottom:20px; right:20px; z-index:50;
-    width:52px; height:52px; border-radius:0; padding:0;
-    font-size:1.5rem; display:flex; align-items:center; justify-content:center;
-    opacity:0; pointer-events:none; transition:opacity .2s ease;
-    background:var(--red); color:#fff; border:3px solid var(--ink);
-    box-shadow:3px 3px 0 var(--ink);
-  }
-  #btn-scroll-top.show{ opacity:1; pointer-events:auto; }
-  #reader-wrap{position:relative;}
-  #scan-flash{
-    position:absolute; inset:0; margin-top:12px;
-    display:flex; align-items:center; justify-content:center;
-    font-size:5rem; color:var(--green); background:rgba(255,255,255,0.85);
-    opacity:0; pointer-events:none; transition:opacity .15s ease;
-  }
-  #scan-flash.show{ opacity:1; }
+  #empty{text-align:center; padding:30px 10px; opacity:0.6; font-size:0.9rem; display:none;}
+  .loading{text-align:center; padding:30px; opacity:0.6;}
 </style>
 </head>
 <body>
 <header>
   <h1>Ma BDthèque</h1>
-  <p>Écran d'édition — scan, notes, avis</p>
+  <p>Collection consultable — <span id="count">0</span> album(s) possédé(s)</p>
 </header>
 <main>
-
-  <div class="panel">
-    <h2>Ajouter une BD</h2>
-    <div class="row">
-      <button id="btn-start-scan">📷 Scanner un code-barre</button>
-      <button id="btn-stop-scan" class="secondary hidden">Arrêter la caméra</button>
-    </div>
-    <div id="scan-area" class="hidden">
-      <div id="reader-wrap">
-        <div id="reader"></div>
-        <div id="scan-flash">✓</div>
-      </div>
-    </div>
-    <p id="scan-status"></p>
-    <div id="dup-message"></div>
-    <div class="row" style="margin-top:10px;">
-      <input type="text" id="manual-isbn" placeholder="Ou saisissez l'ISBN manuellement">
-      <button id="btn-manual-add">Ajouter</button>
-    </div>
+  <input type="text" id="search" placeholder="Rechercher un titre, un auteur ou une série...">
+  <div class="row">
+    <button id="btn-wishlist-toggle">⭐ Voir la wishlist</button>
   </div>
-
-  <div class="panel">
-    <h2>Ma collection <span id="count">0</span></h2>
-    <div class="row" style="margin-bottom:12px;">
-      <input type="text" id="search" placeholder="Rechercher un titre, un auteur, une série...">
-    </div>
-    <div id="groups"></div>
-  </div>
-
+  <div id="loading" class="loading">Chargement...</div>
+  <div id="groups"></div>
+  <div id="empty">Aucune BD à afficher.</div>
 </main>
 
-<button id="btn-scroll-top" title="Remonter en haut">⬆</button>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-<script>
-window.addEventListener('error', function(e){
-  const el = document.getElementById('scan-status');
-  const src = e.filename ? e.filename.split('/').pop() : 'inconnu';
-  if(el) el.textContent = 'Erreur JS : ' + e.message + ' — fichier: ' + src + ' (ligne ' + e.lineno + ', col ' + e.colno + ')';
-  console.error('Erreur capturée:', e.message, e.filename, e.lineno, e.colno);
-});
-</script>
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbxUWVtEWRGd7ti_JLFW_rFplt7X2kB3unbIA7IOlfcq3s-N10DFhJvvRZ4ngnPmru4R/exec';
-const EDIT_KEY = 'mabiblimaison';
-const GOOGLE_BOOKS_API_KEY = 'AIzaSyCrKu8cBy6s-bvi6TvoOLTXhtRZS7lZm2Y';
 
 let allBooks = [];
-let html5QrCode = null;
-
-async function callApi(action, data){
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(Object.assign({ action: action, key: EDIT_KEY }, data || {}))
-  });
-  const json = await res.json();
-  if(!json.success) throw new Error(json.error || 'Erreur inconnue');
-  return json;
-}
-
-async function getBooksApi(){
-  const res = await fetch(API_URL);
-  const json = await res.json();
-  if(!json.success) throw new Error(json.error || 'Erreur inconnue');
-  return json.books;
-}
+let showWishlistOnly = false;
 
 function escapeHtml(str){
   const div = document.createElement('div');
   div.textContent = str || '';
   return div.innerHTML;
-}
-
-async function refresh(){
-  allBooks = await getBooksApi();
-  render();
 }
 
 function groupBySeries(books){
@@ -178,35 +97,30 @@ function groupBySeries(books){
   return { groups, keys };
 }
 
+function possessionTag(possession){
+  if(possession === 'Wishlist') return `<span class="possession-tag wishlist">⭐ Je le veux !</span>`;
+  if(possession === "Je n'en veux pas" || possession === "Je l'ai, mais je ne veux pas la suite") return `<span class="possession-tag nope">❌ Non merci</span>`;
+  return `<span class="possession-tag owned">✅ Déjà possédé</span>`;
+}
+
 function bookCard(b){
+  const seriesLine = b.series && b.series.trim()
+    ? `<div class="series-line">${escapeHtml(b.series)}</div>`
+    : '';
+  const tomePart = b.tome && String(b.tome).trim()
+    ? `<span class="tome-badge">T. ${escapeHtml(b.tome)}</span>`
+    : '';
   return `
-    <li class="book" data-isbn-card="${escapeHtml(b.isbn)}">
-      <div class="book-top">
-        <img src="${b.cover||''}" onerror="this.style.visibility='hidden'">
-        <div class="info">
-          <input type="text" class="title-input" data-isbn="${b.isbn}" placeholder="Titre inconnu — tapez-le ici" value="${escapeHtml(b.title)}">
-          <input type="text" class="authors-input" data-isbn="${b.isbn}" placeholder="Auteur inconnu — tapez-le ici" value="${escapeHtml(b.authors)}">
-          <span class="isbn-tag">${escapeHtml(b.isbn)}</span>
-        </div>
+    <li class="book">
+      <img src="${b.cover||''}" onerror="this.style.visibility='hidden'">
+      <div class="info">
+        ${seriesLine}
+        <h3>${tomePart}${escapeHtml(b.title || 'Titre inconnu')}</h3>
+        <p>${escapeHtml(b.authors || 'Auteur inconnu')}</p>
+        <span class="isbn-tag">${escapeHtml(b.isbn)}</span>
+        ${b.note ? `<div class="note">"${escapeHtml(b.note)}"</div>` : ''}
       </div>
-      <div class="book-controls">
-        <select data-isbn="${b.isbn}" class="possession-select">
-          <option value="Je l'ai" ${b.possession==="Je l'ai" ? 'selected' : ''}>Je l'ai</option>
-          <option value="Je n'en veux pas" ${b.possession==="Je n'en veux pas" ? 'selected' : ''}>Je n'en veux pas</option>
-          <option value="Wishlist" ${b.possession==='Wishlist' ? 'selected' : ''}>Wishlist</option>
-          <option value="Je l'ai, mais je ne veux pas la suite" ${b.possession==="Je l'ai, mais je ne veux pas la suite" ? 'selected' : ''}>Je l'ai, mais je ne veux pas la suite</option>
-        </select>
-        <button class="small danger" data-isbn="${b.isbn}" data-action="delete">Supprimer</button>
-        <button class="small confirm hidden" data-isbn="${b.isbn}" data-action="save">Valider</button>
-      </div>
-      <span class="field-label">Série</span>
-      <input type="text" class="series-input" data-isbn="${b.isbn}" placeholder="Nom de la série (optionnel)" value="${escapeHtml(b.series)}">
-      <span class="field-label">Tome</span>
-      <input type="text" class="tome-input" data-isbn="${b.isbn}" placeholder="Numéro du tome (optionnel)" value="${escapeHtml(b.tome)}">
-      <span class="field-label">Couverture (lien d'image, optionnel)</span>
-      <input type="text" class="cover-input" data-isbn="${b.isbn}" placeholder="https://..." value="${escapeHtml(b.cover)}">
-      <span class="field-label">Note personnelle</span>
-      <input type="text" class="note-input" data-isbn="${b.isbn}" placeholder="Votre note..." value="${escapeHtml(b.note)}">
+      ${possessionTag(b.possession)}
     </li>`;
 }
 
@@ -215,14 +129,21 @@ function render(){
   const container = document.getElementById('groups');
   document.getElementById('count').textContent = allBooks.filter(b => b.possession === "Je l'ai" || b.possession === "Je l'ai, mais je ne veux pas la suite").length;
 
-  const filtered = allBooks.filter(b=>{
+  let filtered = allBooks.filter(b=>{
     if(!q) return true;
     return (b.title||'').toLowerCase().includes(q)
       || (b.authors||'').toLowerCase().includes(q)
       || (b.series||'').toLowerCase().includes(q);
   });
 
+  if(showWishlistOnly){
+    filtered = filtered.filter(b => b.possession === 'Wishlist');
+  }
+
+  document.getElementById('empty').style.display = filtered.length === 0 ? 'block' : 'none';
   container.innerHTML = '';
+  if(filtered.length === 0) return;
+
   const { groups, keys } = groupBySeries(filtered);
   keys.forEach(key=>{
     const section = document.createElement('div');
@@ -234,258 +155,26 @@ function render(){
 
 document.getElementById('search').addEventListener('input', render);
 
-function markDirty(el){
-  const card = el.closest('.book');
-  if(!card) return;
-  const btn = card.querySelector('button[data-action="save"]');
-  if(btn) btn.classList.remove('hidden');
-}
-
-document.getElementById('groups').addEventListener('input', (e)=>{
-  if(e.target.matches('.title-input,.authors-input,.series-input,.tome-input,.cover-input,.note-input')){
-    markDirty(e.target);
-  }
-});
-document.getElementById('groups').addEventListener('change', (e)=>{
-  if(e.target.matches('.possession-select')){
-    markDirty(e.target);
-  }
+document.getElementById('btn-wishlist-toggle').addEventListener('click', ()=>{
+  showWishlistOnly = !showWishlistOnly;
+  document.getElementById('btn-wishlist-toggle').textContent = showWishlistOnly ? '📚 Voir toute la collection' : '⭐ Voir la wishlist';
+  render();
 });
 
-document.getElementById('groups').addEventListener('click', async (e)=>{
-  const delBtn = e.target.closest('button[data-action="delete"]');
-  if(delBtn){
-    if(!confirm('Supprimer cette BD de la collection ?')) return;
-    await callApi('delete', { isbn: delBtn.dataset.isbn });
-    await refresh();
-    return;
-  }
-
-  const saveBtn = e.target.closest('button[data-action="save"]');
-  if(saveBtn){
-    const card = saveBtn.closest('.book');
-    const isbn = saveBtn.dataset.isbn;
-    const updates = {
-      title: card.querySelector('.title-input').value,
-      authors: card.querySelector('.authors-input').value,
-      series: card.querySelector('.series-input').value,
-      tome: card.querySelector('.tome-input').value,
-      cover: card.querySelector('.cover-input').value,
-      note: card.querySelector('.note-input').value,
-      possession: card.querySelector('.possession-select').value
-    };
-    saveBtn.textContent = '...';
-    saveBtn.disabled = true;
-    try{
-      await callApi('update', { isbn, updates });
-      await refresh();
-    }catch(err){
-      alert('Erreur : ' + err.message);
-      saveBtn.textContent = 'Valider';
-      saveBtn.disabled = false;
-    }
-  }
-});
-
-async function fetchOpenLibrary_(isbn){
+async function loadBooks(){
   try{
-    const r = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
-    const data = await r.json();
-    const key = `ISBN:${isbn}`;
-    if(data[key]){
-      const d = data[key];
-      return { title:d.title||'', authors:(d.authors||[]).map(a=>a.name).join(', '), cover:d.cover?d.cover.medium:'' };
-    }
-  }catch(e){}
-  return { title:'', authors:'', cover:'' };
-}
-
-async function fetchGoogleBooks_(isbn){
-  try{
-    const gbUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}` + (GOOGLE_BOOKS_API_KEY ? `&key=${GOOGLE_BOOKS_API_KEY}` : '');
-    const r2 = await fetch(gbUrl);
-    const data2 = await r2.json();
-    if(data2.items && data2.items.length){
-      const v = data2.items[0].volumeInfo;
-      return { title:v.title||'', authors:(v.authors||[]).join(', '), cover:v.imageLinks?v.imageLinks.thumbnail:'' };
-    }
-  }catch(e){}
-  return { title:'', authors:'', cover:'' };
-}
-
-async function lookupIsbnOnce(isbn){
-  const [ol, gb] = await Promise.all([ fetchOpenLibrary_(isbn), fetchGoogleBooks_(isbn) ]);
-  return {
-    isbn,
-    title: gb.title || ol.title || '',
-    authors: gb.authors || ol.authors || '',
-    cover: ol.cover || gb.cover || ''
-  };
-}
-
-function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
-
-async function lookupIsbn(isbn){
-  let book = await lookupIsbnOnce(isbn);
-  if(!book.title){
-    await sleep(800);
-    book = await lookupIsbnOnce(isbn);
-  }
-  return book;
-}
-
-function showDupMessage(text){
-  const el = document.getElementById('dup-message');
-  el.textContent = text;
-  el.style.display = 'block';
-  setTimeout(()=>{ el.style.display = 'none'; }, 6000);
-}
-
-function scrollToAndHighlight(isbn){
-  const card = document.querySelector(`[data-isbn-card="${isbn}"]`);
-  if(card){
-    card.scrollIntoView({behavior:'smooth', block:'center'});
-    card.classList.add('highlight');
-    setTimeout(()=> card.classList.remove('highlight'), 2500);
-  }
-  const btn = document.getElementById('btn-scroll-top');
-  if(btn) btn.classList.add('show');
-}
-
-async function addIsbn(isbn){
-  isbn = isbn.replace(/[^0-9Xx]/g,'');
-  if(!isbn) return;
-
-  if(allBooks.some(b => b.isbn === isbn)){
-    document.getElementById('scan-status').textContent = '';
-    showDupMessage('BD déjà répertoriée — vous pouvez l\'éditer ci-dessous.');
-    scrollToAndHighlight(isbn);
-    return;
-  }
-
-  document.getElementById('scan-status').textContent = `Recherche des informations pour ${isbn}...`;
-  const book = await lookupIsbn(isbn);
-
-  try{
-    const result = await callApi('add', { book });
-    allBooks = result.books;
-
-    if(result.duplicate){
-      document.getElementById('scan-status').textContent = '';
-      showDupMessage('BD déjà répertoriée — vous pouvez l\'éditer ci-dessous.');
-      render();
-      scrollToAndHighlight(isbn);
-    }else{
-      document.getElementById('scan-status').textContent = book.title ? `Ajouté : ${book.title}` : `ISBN ${isbn} ajouté (infos non trouvées).`;
-      render();
-      scrollToAndHighlight(isbn);
-    }
+    const res = await fetch(API_URL);
+    const json = await res.json();
+    if(!json.success) throw new Error(json.error || 'Erreur inconnue');
+    allBooks = json.books;
+    document.getElementById('loading').style.display = 'none';
+    render();
   }catch(err){
-    document.getElementById('scan-status').textContent = 'Erreur : ' + err.message;
+    document.getElementById('loading').textContent = 'Erreur de chargement : ' + err.message;
   }
 }
 
-document.getElementById('btn-manual-add').addEventListener('click', ()=>{
-  const val = document.getElementById('manual-isbn').value;
-  if(val.trim()){ addIsbn(val.trim()); document.getElementById('manual-isbn').value = ''; }
-});
-document.getElementById('manual-isbn').addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter') document.getElementById('btn-manual-add').click();
-});
-
-let scanLocked = false;
-let lastScannedCode = null;
-let lastScannedAt = 0;
-const SCAN_COOLDOWN_MS = 2500;
-
-function isValidBookBarcode(code){
-  if(!/^\d{13}$/.test(code)) return false;
-  const digits = code.split('').map(Number);
-  const checkDigit = digits.pop();
-  let sum = 0;
-  digits.forEach((d,i)=>{ sum += d * (i % 2 === 0 ? 1 : 3); });
-  const calculated = (10 - (sum % 10)) % 10;
-  return calculated === checkDigit;
-}
-
-function flashScanConfirmed(){
-  const el = document.getElementById('scan-flash');
-  if(!el) return;
-  el.classList.add('show');
-  setTimeout(()=> el.classList.remove('show'), 1200);
-}
-
-function flashScanRejected(){
-  const status = document.getElementById('scan-status');
-  if(status) status.textContent = 'Code lu peu clairement, réessayez de viser le code-barres.';
-}
-
-async function handleDecoded(decodedText){
-  const now = Date.now();
-  if(scanLocked) return;
-  if(decodedText === lastScannedCode && (now - lastScannedAt) < SCAN_COOLDOWN_MS) return;
-
-  lastScannedCode = decodedText;
-  lastScannedAt = now;
-
-  if(!isValidBookBarcode(decodedText)){
-    flashScanRejected();
-    return;
-  }
-
-  scanLocked = true;
-  flashScanConfirmed();
-
-  try{
-    await addIsbn(decodedText);
-  } finally {
-    scanLocked = false;
-  }
-}
-
-document.getElementById('btn-start-scan').addEventListener('click', async ()=>{
-  document.getElementById('scan-area').classList.remove('hidden');
-  document.getElementById('btn-start-scan').classList.add('hidden');
-  document.getElementById('btn-stop-scan').classList.remove('hidden');
-  document.getElementById('scan-status').textContent = 'Ouverture de la caméra...';
-  html5QrCode = new Html5Qrcode("reader");
-  try{
-    await html5QrCode.start(
-      { facingMode: "environment" },
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 120 },
-        formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13 ]
-      },
-      (decodedText)=>{ handleDecoded(decodedText); },
-      ()=>{}
-    );
-    document.getElementById('scan-status').textContent = 'Visez le code-barre au dos de la BD.';
-  }catch(err){
-    document.getElementById('scan-status').textContent = "Impossible d'accéder à la caméra. Utilisez l'ajout manuel ci-dessous.";
-  }
-});
-
-document.getElementById('btn-stop-scan').addEventListener('click', async ()=>{
-  if(html5QrCode){ try{ await html5QrCode.stop(); await html5QrCode.clear(); }catch(e){} }
-  document.getElementById('scan-area').classList.add('hidden');
-  document.getElementById('btn-start-scan').classList.remove('hidden');
-  document.getElementById('btn-stop-scan').classList.add('hidden');
-});
-
-refresh();
-
-const scrollTopBtn = document.getElementById('btn-scroll-top');
-window.addEventListener('scroll', ()=>{
-  if(window.scrollY > 300){
-    scrollTopBtn.classList.add('show');
-  }else{
-    scrollTopBtn.classList.remove('show');
-  }
-});
-scrollTopBtn.addEventListener('click', ()=>{
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-});
+loadBooks();
 </script>
 </body>
 </html>
