@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -70,6 +71,22 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxUWVtEWRGd7ti_JLFW_rFp
 let allBooks = [];
 let showWishlistOnly = false;
 
+// Normalise un texte pour la recherche : ignore majuscules, accents (é è ê à ç ï...),
+// ligatures (œ -> oe, æ -> ae) et types d'apostrophes.
+function normalizeText(str){
+  return (str || '')
+    .toString()
+    .toLowerCase()
+    .replace(/\u0153/g, 'oe')
+    .replace(/\u00e6/g, 'ae')
+    .replace(/\u00df/g, 'ss')
+    .replace(/[\u2019\u2018\u02BC`\u00B4]/g, "'")
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function escapeHtml(str){
   const div = document.createElement('div');
   div.textContent = str || '';
@@ -125,15 +142,15 @@ function bookCard(b){
 }
 
 function render(){
-  const q = document.getElementById('search').value.trim().toLowerCase();
+  const q = normalizeText(document.getElementById('search').value);
   const container = document.getElementById('groups');
   document.getElementById('count').textContent = allBooks.filter(b => b.possession === "Je l'ai" || b.possession === "Je l'ai, mais je ne veux pas la suite").length;
 
   let filtered = allBooks.filter(b=>{
     if(!q) return true;
-    return (b.title||'').toLowerCase().includes(q)
-      || (b.authors||'').toLowerCase().includes(q)
-      || (b.series||'').toLowerCase().includes(q);
+    return normalizeText(b.title).includes(q)
+      || normalizeText(b.authors).includes(q)
+      || normalizeText(b.series).includes(q);
   });
 
   if(showWishlistOnly){
